@@ -19,20 +19,12 @@ const (
 	NoAction = 4
 )
 
-/*
-type Status int
-const (
-	Success   Status = 1
-	Failure   Status = 2
-)
-*/
-
 const (
 	Success = 1
 	Failure = 2
 )
 
-type SoftwareDb struct{
+type SoftwareDB struct{
 	Name string
 	Version string
 	AvailVersion string
@@ -40,28 +32,62 @@ type SoftwareDb struct{
 	Status int
 }
 
+func SetDataListInDB(client *redis.Client, SDBList []*SoftwareDB){
 
-type myButtonHandler struct {
-	counter int
-	text    string
-}
+	for _, SDB := range SDBList {
 
-func (h *myButtonHandler) HandleEvent(e gwu.Event) {
-	if b, isButton := e.Src().(gwu.Button); isButton {
-		b.SetText(b.Text() + h.text)
-		h.counter++
-		b.SetToolTip(fmt.Sprintf("You've clicked %d times!", h.counter))
-		e.MarkDirty(b)
+		SetDataInDB(client,SDB)
 	}
 }
 
-func DatabaseOperation(client *redis.Client, win gwu.Window) {
+func SetDataInDB(client *redis.Client, SDB *SoftwareDB){
+	client.HSet(SDB.Name,"Name",SDB.Name)
+	client.HSet(SDB.Name,"Version",SDB.Version)
+	client.HSet(SDB.Name,"AvailVersion", SDB.AvailVersion)
+	client.HSet(SDB.Name,"Action", SDB.Action)
+	client.HSet(SDB.Name,"Status", SDB.Status)
+}
 
-	/* Building software database */
-	SDB := SoftwareDb{}
+
+func PrepareKubernetesSetupDummyData() []*SoftwareDB{
+	SDBList := []*SoftwareDB{}
+
+	SDB1 := &SoftwareDB{}
+	SDB1.Status = Success
+	SDB1.Action = Update
+	SDB1.Name ="kubernetes"
+	SDB1.Version ="1.9.3-00"
+	SDB1.AvailVersion ="1.10.3"
+
+	SDB2 := &SoftwareDB{}
+	SDB2.Status = Success
+	SDB2.Action = Install
+	SDB2.Name ="docker-ce"
+	SDB2.Version ="17.03.2~ce-0~ubuntu-xenial"
+	SDB2.AvailVersion ="17.03.2~ce-0~ubuntu-xenial"
+
+	SDBList = append(SDBList, SDB1)
+	SDBList = append(SDBList, SDB2)
+	return SDBList
+}
+
+func PrepareKubernetesKeyList()( keyList[]string){
+
+	keyList = []string{"kubernetes","docker-ce"}
+	return
+}
+
+
+func DatabaseOperation(client *redis.Client, win gwu.Window) {
+	SDPDataLIst := PrepareKubernetesSetupDummyData()
+	SetDataListInDB(client, SDPDataLIst)
+
+	/*
+	Building software database
+	SDB := SoftwareDB{}
 	SDB.Status = Success
 	SDB.Action = Update
-	SDB.Name ="Kubernetes"
+	SDB.Name ="kubernetes"
 	SDB.Version ="1.9.3-00"
 	SDB.AvailVersion ="1.10.3"
 
@@ -78,12 +104,7 @@ func DatabaseOperation(client *redis.Client, win gwu.Window) {
 	fmt.Println("Software Name: ", val)
 	fmt.Println("   ########################################################  ")
 
-	client.HSet(SDB.Name,"Name",SDB.Name)
-	client.HSet(SDB.Name,"Version",SDB.Version)
-	client.HSet(SDB.Name,"AvailVersion", SDB.AvailVersion)
-	client.HSet(SDB.Name,"Action", SDB.Action)
-	client.HSet(SDB.Name,"Status", SDB.Status)
-
+	SetDataInDB(client,&SDB)
 
     name := client.HGet(SDB.Name,"Name")
     version := client.HGet(SDB.Name,"Version")
@@ -95,15 +116,17 @@ func DatabaseOperation(client *redis.Client, win gwu.Window) {
 
 	data := client.HGetAll(SDB.Name)
 	fmt.Printf("All Value: %+v",data)
+*/
 
 
     // Display software details at Ninja Client UI
-	DisplayAtNinjaClientUI(client,win,SDB.Name)
+	keyList := PrepareKubernetesKeyList()
+	DisplayAtNinjaClientUI(client,win,keyList)
 }
 
-func getDataFromDataBase(key string, client *redis.Client)(out *SoftwareDb){
-	fmt.Printf("PRINTING DATABASE")
-	outSDB := &SoftwareDb{}
+func GetDataFromDataBase(key string, client *redis.Client)(out SoftwareDB){
+	fmt.Printf("PNP Client DATABASE ")
+	outSDB := SoftwareDB{}
 	outSDB.Name = client.HGet(key,"Name").Val()
 	outSDB.Version = client.HGet(key,"Version").Val()
 	outSDB.AvailVersion = client.HGet(key,"AvailVersion").Val()
@@ -119,9 +142,14 @@ func getDataFromDataBase(key string, client *redis.Client)(out *SoftwareDb){
 	return outSDB
 }
 
-func DisplayAtNinjaClientUI(client *redis.Client, win gwu.Window, key string){
+func DisplayAtNinjaClientUI(client *redis.Client, win gwu.Window, keyList []string){
 
-	sdb := getDataFromDataBase(key,client)
+
+	var sdb [2]SoftwareDB
+	sdb[0] = GetDataFromDataBase(keyList[0],client)
+	sdb[1] = GetDataFromDataBase(keyList[1],client)
+
+
 	p := gwu.NewPanel()
 	p.SetHAlign(gwu.HACenter)
 	p.SetCellPadding(20)
@@ -169,13 +197,13 @@ func DisplayAtNinjaClientUI(client *redis.Client, win gwu.Window, key string){
 
 	btnsPanel := gwu.NewNaturalPanel()
 
-	for row := 1; row < 2; row++ {
-		t.Add(gwu.NewLabel(fmt.Sprintf("%s", sdb.Name)), row, 0)
-		t.Add(gwu.NewLabel(fmt.Sprintf("%s", sdb.Version)), row, 1)
-		t.Add(gwu.NewLabel(fmt.Sprintf("%s", sdb.AvailVersion)), row, 2)
+	for row := 1; row < 3; row++ {
+		t.Add(gwu.NewLabel(fmt.Sprintf("%s", sdb[row -1].Name)), row, 0)
+		t.Add(gwu.NewLabel(fmt.Sprintf("%s", sdb[row -1].Version)), row, 1)
+		t.Add(gwu.NewLabel(fmt.Sprintf("%s", sdb[row -1].AvailVersion)), row, 2)
 
 		var statusStr string
-		if sdb.Status == Success{
+		if sdb[row -1].Status == Success{
 			statusStr = "Operation Success"
 		}else{
 			statusStr = "Operation Failure"
@@ -183,13 +211,13 @@ func DisplayAtNinjaClientUI(client *redis.Client, win gwu.Window, key string){
 		t.Add(gwu.NewLabel(fmt.Sprintf("%s", statusStr)), row, 3)
 
 		var actionStr string
-		if sdb.Action == Install {
+		if sdb[row -1].Action == Install {
 			actionStr = "INSTALL"
-		}else if sdb.Action == Rollback{
+		}else if sdb[row -1].Action == Rollback{
 			actionStr = "ROLLBACK"
-		}else if sdb.Action == Update{
+		}else if sdb[row -1].Action == Update{
 			actionStr = "UPDATE"
-		}else if sdb.Action == NoAction{
+		}else if sdb[row -1].Action == NoAction{
 			actionStr= "NOACTION"
 		}else{
 			actionStr=""
