@@ -15,6 +15,8 @@ import (
 const (
 	Install = 1
 	Rollback = 2
+	Update  =  2
+        NoAction = 3
 )
 
 /*
@@ -139,7 +141,7 @@ func DisplayAtNinjaClientUI(client *redis.Client, win gwu.Window, key string){
 
 
 	img := gwu.NewImage(fmt.Sprintf("Installed Software"), "http://www2.multilizer.com/wp-content/uploads/2014/07/tool.jpg")
-	img.Style().SetSize("100","100")
+	img.Style().SetSize("70","50")
 	t.Add(img, 0, 0)
 
 	lb1 := gwu.NewLabel(fmt.Sprintf("Current Version"))
@@ -165,6 +167,8 @@ func DisplayAtNinjaClientUI(client *redis.Client, win gwu.Window, key string){
 	t.Add(lb3, 0, 3)
 	t.Add(lb4, 0, 4)
 
+	btnsPanel := gwu.NewNaturalPanel()
+
 	for row := 1; row < 2; row++ {
 		t.Add(gwu.NewLabel(fmt.Sprintf("%s", sdb.Name)), row, 0)
 		t.Add(gwu.NewLabel(fmt.Sprintf("%s", sdb.Version)), row, 1)
@@ -180,13 +184,22 @@ func DisplayAtNinjaClientUI(client *redis.Client, win gwu.Window, key string){
 
 		var actionStr string
 		if sdb.Action == Install {
-			actionStr = "Install"
+			actionStr = "UPDATE"
 
 		}else{
-			actionStr = "Rollback"
+			actionStr = "ROLLBACK"
 		}
+
 		butn1 := gwu.NewButton(fmt.Sprintf("%s", actionStr))
-		butn1.Style().SetSize("30","30")
+		butn1.Style().SetColor("white")
+		butn1.Style().SetBackground("green")
+
+		butn1.AddEHandlerFunc(func(e gwu.Event) {
+			//newbtn := gwu.NewButton(fmt.Sprintf("Created Environment #%d", btnsPanel.CompsCount()))
+			//btnsPanel.Insert(newbtn, 0)
+			fmt.Printf("Update/Rollback button pressed!")
+		}, gwu.ETypeClick)
+
 		t.Add(butn1,row,4)
 	}
 
@@ -197,6 +210,7 @@ func DisplayAtNinjaClientUI(client *redis.Client, win gwu.Window, key string){
 	}
 
 	p.Add(t)
+	p.Add(btnsPanel)
 	win.Add(p)
 }
 
@@ -227,7 +241,7 @@ func main() {
 	p := gwu.NewPanel()
 	p.SetHAlign(gwu.HACenter)
 	p.SetCellPadding(2)
-        l2 := gwu.NewLabel("Welcome to TechNinja Display Dashboard")
+        l2 := gwu.NewLabel("PNP Software Catalog")
 	l2.Style().SetFontWeight(gwu.FontWeightBold).SetFontSize("300%")
 	l2.Style().SetColor("green")
 	l2.Style().SetBackground("while")
@@ -279,5 +293,5 @@ func main() {
 	server.AddWin(masterWin)
 
         //server.Start()
-	server.Start("web-ui-dashboard")
+	server.Start("display-ui")
 }
