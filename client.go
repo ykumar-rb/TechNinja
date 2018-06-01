@@ -15,8 +15,8 @@ import (
 const (
 	Install = 1
 	Rollback = 2
-	Update  =  2
-        NoAction = 3
+	Update  =  3
+	NoAction = 4
 )
 
 /*
@@ -60,10 +60,10 @@ func DatabaseOperation(client *redis.Client, win gwu.Window) {
 	/* Building software database */
 	SDB := SoftwareDb{}
 	SDB.Status = Success
-	SDB.Action = Install
+	SDB.Action = Update
 	SDB.Name ="Kubernetes"
-	SDB.Version ="1.0.0"
-	SDB.AvailVersion ="2.0.0"
+	SDB.Version ="1.9.3-00"
+	SDB.AvailVersion ="1.10.3"
 
 	fmt.Println("DataBase Client Function")
 	err := client.Set(SDB.Name, SDB.Name, 0).Err()
@@ -184,10 +184,15 @@ func DisplayAtNinjaClientUI(client *redis.Client, win gwu.Window, key string){
 
 		var actionStr string
 		if sdb.Action == Install {
-			actionStr = "UPDATE"
-
-		}else{
+			actionStr = "INSTALL"
+		}else if sdb.Action == Rollback{
 			actionStr = "ROLLBACK"
+		}else if sdb.Action == Update{
+			actionStr = "UPDATE"
+		}else if sdb.Action == NoAction{
+			actionStr= "NOACTION"
+		}else{
+			actionStr=""
 		}
 
 		butn1 := gwu.NewButton(fmt.Sprintf("%s", actionStr))
@@ -195,9 +200,21 @@ func DisplayAtNinjaClientUI(client *redis.Client, win gwu.Window, key string){
 		butn1.Style().SetBackground("green")
 
 		butn1.AddEHandlerFunc(func(e gwu.Event) {
+
+			if butn1.Text()  == "UPDATE"{
+				fmt.Printf("UPDATE button pressed!")
+			}else if butn1.Text() == "INSTALL"{
+				fmt.Printf("INSTALL button pressed!")
+			}else if butn1.Text() == "ROLLBACK"{
+				fmt.Printf("ROLLBACK button pressed!")
+			}else if butn1.Text() == "NOACTION"{
+				fmt.Printf("NOACTION button pressed!")
+			}else{
+				fmt.Printf("UNKNOWN button pressed!")
+			}
+
 			//newbtn := gwu.NewButton(fmt.Sprintf("Created Environment #%d", btnsPanel.CompsCount()))
 			//btnsPanel.Insert(newbtn, 0)
-			fmt.Printf("Update/Rollback button pressed!")
 		}, gwu.ETypeClick)
 
 		t.Add(butn1,row,4)
@@ -220,10 +237,10 @@ func main() {
 	masterWin.Style().SetFullSize()
 	masterWin.SetAlign(gwu.HACenter, gwu.VAMiddle)
 
+	/* Master window */
 	p4 := gwu.NewPanel()
 	p4.SetHAlign(gwu.HACenter)
 	p4.SetCellPadding(2)
-
 	l1 := gwu.NewLabel("Welcome to TechNinja Dashboard")
 	l1.Style().SetFontWeight(gwu.FontWeightBold).SetFontSize("300%")
 	l1.Style().SetColor("green")
@@ -231,8 +248,7 @@ func main() {
 	p4.Add(l1)
 	masterWin.Add(p4)
 
-
-	// Create and build a window
+	/* Display window for software Catalog */
 	win := gwu.NewWindow("display-ui", "TECH-NINJA CLIENT GUI!")
 	win.Style().SetFullWidth()
 	win.SetHAlign(gwu.HACenter)
@@ -259,39 +275,12 @@ func main() {
 	fmt.Println(pong, err)
 	DatabaseOperation(client,win)
 
-/*
-	p := gwu.NewPanel()
-	p.SetHAlign(gwu.HACenter)
-	p.SetCellPadding(2)
-        t := gwu.NewTable()
-	t.Style().SetBorder2(1, gwu.BrdStyleSolid, gwu.ClrGrey)
-	t.SetAlign(gwu.HARight, gwu.VATop)
-	t.EnsureSize(5, 5)
-	for row := 0; row < 5; row++ {
-		for col := 0; col < 5; col++ {
-			t.Add(gwu.NewButton(fmt.Sprintf("Button %d%d", row, col)), row, col)
-		}
-	}
-	t.SetColSpan(2, 1, 2)
-	t.SetRowSpan(3, 1, 2)
-	t.CellFmt(2, 2).Style().SetSizePx(150, 80)
-	t.CellFmt(2, 2).SetAlign(gwu.HARight, gwu.VABottom)
-	t.RowFmt(2).SetAlign(gwu.HADefault, gwu.VAMiddle)
-	t.CompAt(2, 1).Style().SetFullSize()
-	t.CompAt(4, 2).Style().SetFullWidth()
-	t.RowFmt(0).Style().SetBackground(gwu.ClrRed)
-	t.RowFmt(1).Style().SetBackground(gwu.ClrGreen)
-	t.RowFmt(2).Style().SetBackground(gwu.ClrBlue)
-	t.RowFmt(3).Style().SetBackground(gwu.ClrGrey)
-	t.RowFmt(4).Style().SetBackground(gwu.ClrTeal)
-	p.Add(t)
-	win.Add(p)
-*/	
+	// Adding all windows to server
 	server := gwu.NewServer("techninja.com", "localhost:8081")
 	server.SetText("Starting Tech Ninja!!")
 	server.AddWin(win)
 	server.AddWin(masterWin)
 
-        //server.Start()
+	//server.Start()
 	server.Start("display-ui")
 }
