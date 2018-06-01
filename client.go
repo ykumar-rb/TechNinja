@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/icza/gowut/gwu"
 	"github.com/go-redis/redis"
+	"strconv"
 )
 
 
@@ -52,7 +53,7 @@ func (h *myButtonHandler) HandleEvent(e gwu.Event) {
 	}
 }
 
-func DatabaseOperation(client *redis.Client) {
+func DatabaseOperation(client *redis.Client, win gwu.Window) {
 
 	/* Building software database */
 	SDB := SoftwareDb{}
@@ -61,7 +62,6 @@ func DatabaseOperation(client *redis.Client) {
 	SDB.Name ="Kubernetes"
 	SDB.Version ="1.0.0"
 	SDB.AvailVersion ="2.0.0"
-
 
 	fmt.Println("DataBase Client Function")
 	err := client.Set(SDB.Name, SDB.Name, 0).Err()
@@ -93,8 +93,112 @@ func DatabaseOperation(client *redis.Client) {
 
 	data := client.HGetAll(SDB.Name)
 	fmt.Printf("All Value: %+v",data)
+
+
+    // Display software details at Ninja Client UI
+	DisplayAtNinjaClientUI(client,win,SDB.Name)
 }
 
+func getDataFromDataBase(key string, client *redis.Client)(out *SoftwareDb){
+	fmt.Printf("PRINTING DATABASE")
+	outSDB := &SoftwareDb{}
+	outSDB.Name = client.HGet(key,"Name").Val()
+	outSDB.Version = client.HGet(key,"Version").Val()
+	outSDB.AvailVersion = client.HGet(key,"AvailVersion").Val()
+	outSDB.Action, _ = strconv.Atoi(client.HGet(key,"Action").Val())
+	outSDB.Status ,_= strconv.Atoi(client.HGet(key,"Status").Val())
+
+
+	fmt.Printf("*** Software Details # Name: %s, Version: %s AvailVersion: %s Action:%v, Status: %v",
+		outSDB.Name,outSDB.Version, outSDB.AvailVersion, outSDB.Action,outSDB.Status)
+
+	data := client.HGetAll(key)
+	fmt.Printf("All Value: %+v",data)
+	return outSDB
+}
+
+func DisplayAtNinjaClientUI(client *redis.Client, win gwu.Window, key string){
+
+	sdb := getDataFromDataBase(key,client)
+	p := gwu.NewPanel()
+	p.SetHAlign(gwu.HACenter)
+	p.SetCellPadding(20)
+
+	t := gwu.NewTable()
+	t.Style().SetBorder2(10, gwu.BrdStyleSolid, gwu.ClrNavy)
+	t.SetAlign(gwu.HARight, gwu.VATop)
+	t.Style().SetSize("1000","500")
+	t.EnsureSize(5, 5)
+	t.RowFmt(0).Style().SetBackground(gwu.ClrNavy)
+
+	t.RowFmt(0).SetAlign(gwu.HADefault, gwu.VAMiddle)
+	t.RowFmt(1).SetAlign(gwu.HADefault, gwu.VAMiddle)
+	t.RowFmt(2).SetAlign(gwu.HADefault, gwu.VAMiddle)
+	t.RowFmt(3).SetAlign(gwu.HADefault, gwu.VAMiddle)
+	t.RowFmt(4).SetAlign(gwu.HADefault, gwu.VAMiddle)
+
+
+	img := gwu.NewImage(fmt.Sprintf("Installed Software"), "http://www2.multilizer.com/wp-content/uploads/2014/07/tool.jpg")
+	img.Style().SetSize("100","100")
+	t.Add(img, 0, 0)
+
+	lb1 := gwu.NewLabel(fmt.Sprintf("Current Version"))
+	//lb1.Style().SetBackground("blue")
+	lb1.Style().SetColor("white")
+	lb1.Style().SetWidth("20")
+
+	lb2 := gwu.NewLabel(fmt.Sprintf("Available Version"))
+	lb2.Style().SetColor("white")
+	lb2.Style().SetWidth("20")
+
+	lb3 := gwu.NewLabel(fmt.Sprintf("Status"))
+	lb3.Style().SetColor("white")
+	lb3.Style().SetWidth("20")
+
+	lb4 := gwu.NewLabel(fmt.Sprintf("Action"))
+	lb4.Style().SetColor("white")
+	lb4.Style().SetWidth("20")
+
+
+	t.Add(lb1, 0, 1)
+	t.Add(lb2, 0, 2)
+	t.Add(lb3, 0, 3)
+	t.Add(lb4, 0, 4)
+
+	for row := 1; row < 2; row++ {
+		t.Add(gwu.NewLabel(fmt.Sprintf("%s", sdb.Name)), row, 0)
+		t.Add(gwu.NewLabel(fmt.Sprintf("%s", sdb.Version)), row, 1)
+		t.Add(gwu.NewLabel(fmt.Sprintf("%s", sdb.AvailVersion)), row, 2)
+
+		var statusStr string
+		if sdb.Status == Success{
+			statusStr = "Operation Success"
+		}else{
+			statusStr = "Operation Failure"
+		}
+		t.Add(gwu.NewLabel(fmt.Sprintf("%s", statusStr)), row, 3)
+
+		var actionStr string
+		if sdb.Action == Install {
+			actionStr = "Install"
+
+		}else{
+			actionStr = "Rollback"
+		}
+		butn1 := gwu.NewButton(fmt.Sprintf("%s", actionStr))
+		butn1.Style().SetSize("30","30")
+		t.Add(butn1,row,4)
+	}
+
+	for row := 2; row < 5; row++ {
+		for col := 0; col < 5; col++ {
+			t.Add(gwu.NewLabel(fmt.Sprintf("Button %d%d", row, col)), row, col)
+		}
+	}
+
+	p.Add(t)
+	win.Add(p)
+}
 
 func main() {
 	//  Master window
@@ -139,8 +243,8 @@ func main() {
 
 	pong, err := client.Ping().Result()
 	fmt.Println(pong, err)
+	DatabaseOperation(client,win)
 
-	DatabaseOperation(client)
 /*
 	p := gwu.NewPanel()
 	p.SetHAlign(gwu.HACenter)
