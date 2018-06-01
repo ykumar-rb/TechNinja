@@ -10,13 +10,14 @@ import (
 
 	"github.com/go-redis/redis"
 	"github.com/icza/gowut/gwu"
+	"strings"
 )
 
 const (
 	Install  = 1
 	Rollback = 2
 	Update   = 3
-	NoAction = 5
+	NoAction = 4
 )
 
 const (
@@ -178,14 +179,29 @@ func DisplayAtNinjaClientUI(client *redis.Client, win gwu.Window, keyList []stri
 		butn1 := gwu.NewButton(fmt.Sprintf("%s", actionStr))
 		butn1.Style().SetColor("white")
 		butn1.Style().SetBackground("green")
+		//name := "button"+ strconv.Itoa(row)
+		name := "button"+ sdb[row -1].Name
+		butn1.SetAttr("ID",name)
 
 		butn1.AddEHandlerFunc(func(e gwu.Event) {
 			if butn1.Text() == "UPDATE" {
 				fmt.Printf("UPDATE button pressed!")
+				val := butn1.Attr("ID")
+				if strings.Contains(val,"kubernetes"){
+					fmt.Printf("Hey last UPDATE action was for Kubernetes Software")
+				}else if strings.Contains(val,"docker-ce"){
+					fmt.Printf("Hey last UPDATE action was for Docker Software")
+				}
 			} else if butn1.Text() == "INSTALL" {
 				fmt.Printf("INSTALL button pressed!")
 			} else if butn1.Text() == "ROLLBACK" {
 				fmt.Printf("ROLLBACK button pressed!")
+				val := butn1.Attr("ID")
+				if strings.Contains(val,"kubernetes"){
+					fmt.Printf("Hey last ROLLBACK action was for Kubernetes Software")
+				} else if strings.Contains(val,"docker-ce"){
+					fmt.Printf("Hey last ROLLBACK action was for Docker Software")
+				}
 			} else if butn1.Text() == "NOACTION" {
 				fmt.Printf("NOACTION button pressed!")
 			} else {
