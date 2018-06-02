@@ -1,7 +1,8 @@
 package main
 
 import (
-	redis "github.com/dotcloud/go-redis-server"
+	//redis "github.com/dotcloud/go-redis-server"
+	redis "github.com/go-redis-server"
 )
 
 func main() {
