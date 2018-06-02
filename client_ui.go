@@ -118,11 +118,12 @@ func DisplayAtNinjaClientUI(DBClient *redis.Client, win gwu.Window, keyList []st
 	t.Style().SetBorder2(10, gwu.BrdStyleSolid, gwu.ClrNavy)
 	t.SetAlign(gwu.HARight, gwu.VATop)
 	t.Style().SetSize("1000", "500")
-	t.EnsureSize(2, 2)
+	t.EnsureSize(3, 3)
 	t.RowFmt(0).Style().SetBackground(gwu.ClrNavy)
 
 	t.RowFmt(0).SetAlign(gwu.HADefault, gwu.VAMiddle)
 	t.RowFmt(1).SetAlign(gwu.HADefault, gwu.VAMiddle)
+
 
 	img := gwu.NewImage(fmt.Sprintf("Installed Software"), "http://www2.multilizer.com/wp-content/uploads/2014/07/tool.jpg")
 	img.Style().SetSize("70", "50")
