@@ -225,6 +225,13 @@ func DisplayAtNinjaClientUI(DBClient *redis.Client, win gwu.Window, keyList []st
 	win.Add(p)
 }
 
+func setNoWrap(panel gwu.Panel) {
+	count := panel.CompsCount()
+	for i := count - 1; i >= 0; i-- {
+		panel.CompAt(i).Style().SetWhiteSpace(gwu.WhiteSpaceNowrap)
+	}
+}
+
 func main() {
 	//  Master window
 	masterWin := gwu.NewWindow("web-ui-dashboard", "TECH-NINJA CLIENT GUI !")
@@ -248,14 +255,39 @@ func main() {
 	ClientWin.SetHAlign(gwu.HACenter)
 	ClientWin.SetCellPadding(2)
 
+	ClientWin.AddEHandlerFunc(func(e gwu.Event) {
+		switch e.Type() {
+		case gwu.ETypeWinLoad:
+			fmt.Println("LOADING window:", e.Src().ID())
+		case gwu.ETypeWinUnload:
+			fmt.Println("UNLOADING window:", e.Src().ID())
+		}
+	}, gwu.ETypeWinLoad, gwu.ETypeWinUnload)
+
+
 	p := gwu.NewPanel()
+	p.Style().SetFullWidth().SetBorderBottom2(7, gwu.BrdStyleSolid, "#cccccc")
+	p.Style().SetBackground("green")
+	//p.Style().SetFullWidth().SetBorderBottom2(10, gwu.BrdStyleSolid, "#cccccc")
 	p.SetHAlign(gwu.HACenter)
 	p.SetCellPadding(2)
 	l2 := gwu.NewLabel("PNP Software Catalog")
-	l2.Style().SetFontWeight(gwu.FontWeightBold).SetFontSize("300%")
-	l2.Style().SetColor("green")
-	l2.Style().SetBackground("while")
+	l2.Style().SetFontWeight(gwu.FontWeightBold).SetFontSize("250%")
+	l2.Style().SetColor("white")
 	p.Add(l2)
+
+	setNoWrap(p)
+	p.AddHSpace(10)
+	Refresh := gwu.NewLink("Refresh", "#")
+	Refresh.Style().SetColor(gwu.ClrBlue)
+	Refresh.SetTarget("")
+	Refresh.Style().SetMarginLeftPx(5)
+	Refresh.AddEHandlerFunc(func(e gwu.Event) {
+		e.RemoveSess()
+		e.ReloadWin("display-ui")
+	}, gwu.ETypeClick)
+
+	p.Add(Refresh)
 	ClientWin.Add(p)
 
 	// Database object creation
