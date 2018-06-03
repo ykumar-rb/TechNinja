@@ -7,8 +7,8 @@ package main
 import (
 	"fmt"
 	"strconv"
-
 	"strings"
+	"time"
 
 	"github.com/go-redis/redis"
 	"github.com/icza/gowut/gwu"
@@ -104,6 +104,13 @@ func GetDataFromDataBase(key string, client *redis.Client) (out SoftwareDB) {
 	return outSDB
 }
 
+func startPolling() {
+	for {
+		<-time.After(5 * time.Second)
+		fmt.Println("Polling...")
+	}
+}
+
 func DisplayAtNinjaClientUI(DBClient *redis.Client, win gwu.Window, keyList []string) {
 	// Fetching data from Database for all keys
 	var sdb [2]SoftwareDB
@@ -130,7 +137,6 @@ func DisplayAtNinjaClientUI(DBClient *redis.Client, win gwu.Window, keyList []st
 	t.RowFmt(1).SetAlign(gwu.HADefault, gwu.VAMiddle)
 	t.RowFmt(2).SetAlign(gwu.HADefault, gwu.VAMiddle)
 
-	
 	img := gwu.NewImage(fmt.Sprintf("Installed Software"), "http://www2.multilizer.com/wp-content/uploads/2014/07/tool.jpg")
 	img.Style().SetSize("70", "50")
 	t.Add(img, 0, 0)
@@ -187,7 +193,6 @@ func DisplayAtNinjaClientUI(DBClient *redis.Client, win gwu.Window, keyList []st
 		butn1 := gwu.NewButton(fmt.Sprintf("%s", actionStr))
 		butn1.Style().SetColor("white")
 		butn1.Style().SetBackground("green")
-		//name := "button"+ strconv.Itoa(row)
 		name := "button" + sdb[row-1].Name
 		butn1.SetAttr("ID", name)
 
@@ -223,6 +228,7 @@ func DisplayAtNinjaClientUI(DBClient *redis.Client, win gwu.Window, keyList []st
 	p.Add(t)
 	p.Add(btnsPanel)
 	win.Add(p)
+
 }
 
 func setNoWrap(panel gwu.Panel) {
@@ -264,7 +270,6 @@ func main() {
 		}
 	}, gwu.ETypeWinLoad, gwu.ETypeWinUnload)
 
-
 	p := gwu.NewPanel()
 	p.Style().SetFullWidth().SetBorderBottom2(7, gwu.BrdStyleSolid, "#cccccc")
 	p.Style().SetBackground("green")
@@ -277,6 +282,7 @@ func main() {
 	p.Add(l2)
 
 	setNoWrap(p)
+
 	p.AddHSpace(10)
 	Refresh := gwu.NewLink("Refresh", "#")
 	Refresh.Style().SetColor(gwu.ClrBlue)
@@ -307,6 +313,6 @@ func main() {
 	server.AddWin(ClientWin)
 	server.AddWin(masterWin)
 
-	//server.Start()
+	go startPolling()
 	server.Start("display-ui")
 }
