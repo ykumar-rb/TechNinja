@@ -6,10 +6,10 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	//"time"
 	//"os/exec"
+	"net"
 	"github.com/go-redis/redis"
 	"github.com/icza/gowut/gwu"
 	"github.com/ZTP/pnp/executor"
@@ -31,14 +31,28 @@ type SoftwareDB struct {
 	Name         string
 	Version      string
 	AvailVersion string
-	Action       int
-	Status       int
+	Action       string
+	Status       string
 	Install      string
 	UnInstall    string
 	Rollback     string
 
 }
 
+
+// Get preferred outbound ip of this machine
+func GetSystemIP() string {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		fmt.Errorf(err.Error())
+		return err.Error()
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddr.IP.String()
+}
 
 func ExecuteInstruction(cmd string)(err error) {
 
@@ -83,8 +97,8 @@ func PrepareKubernetesSetupDummyData() []*SoftwareDB {
 	SDBList := []*SoftwareDB{}
 
 	SDB1 := &SoftwareDB{}
-	SDB1.Status = Success
-	SDB1.Action = Update
+	SDB1.Status = "Success"
+	SDB1.Action = "Update"
 	SDB1.Name = "kubernetes"
 	SDB1.Version = "1.9.3-00"
 	SDB1.AvailVersion = "1.10.3"
@@ -93,8 +107,8 @@ func PrepareKubernetesSetupDummyData() []*SoftwareDB {
 	SDB1.Rollback= "dummyRollback"
 
 	SDB2 := &SoftwareDB{}
-	SDB2.Status = Success
-	SDB2.Action = NoAction
+	SDB2.Status = "Success"
+	SDB2.Action = "NoAction"
 	SDB2.Name = "docker-ce"
 	SDB2.Version = "17.03.2~ce-0~ubuntu-xenial"
 	SDB2.AvailVersion = "17.03.2~ce-0~ubuntu-xenial"
@@ -109,7 +123,7 @@ func PrepareKubernetesSetupDummyData() []*SoftwareDB {
 
 func PrepareKubernetesKeyList() (keyList []string) {
 
-	keyList = []string{"kubernetes", "docker-ce"}
+	keyList = []string{"kubernetes", "docker"}
 	return
 }
 
@@ -128,8 +142,8 @@ func GetDataFromDataBase(key string, client *redis.Client) (out SoftwareDB) {
 	outSDB.Name = client.HGet(key, "Name").Val()
 	outSDB.Version = client.HGet(key, "Version").Val()
 	outSDB.AvailVersion = client.HGet(key, "AvailVersion").Val()
-	outSDB.Action, _ = strconv.Atoi(client.HGet(key, "Action").Val())
-	outSDB.Status, _ = strconv.Atoi(client.HGet(key, "Status").Val())
+	outSDB.Action = client.HGet(key, "Action").Val()
+	outSDB.Status = client.HGet(key, "Status").Val()
 	outSDB.Install = client.HGet(key, "Install").Val()
 	outSDB.UnInstall = client.HGet(key, "UnInstall").Val()
 	outSDB.Rollback = client.HGet(key, "Rollback").Val()
@@ -210,26 +224,12 @@ func DisplayAtNinjaClientUI(DBClient *redis.Client, win gwu.Window, keyList []st
 		t.Add(gwu.NewLabel(fmt.Sprintf("%s", sdb[row-1].AvailVersion)), row, 2)
 
 		var statusStr string
-		if sdb[row-1].Status == Success {
-			statusStr = "Operation Success"
-		} else {
-			statusStr = "Operation Failure"
-		}
+		statusStr = sdb[row-1].Status
+
 		t.Add(gwu.NewLabel(fmt.Sprintf("%s", statusStr)), row, 3)
 
 		var actionStr string
-		if sdb[row-1].Action == Install {
-			actionStr = "INSTALL"
-		} else if sdb[row-1].Action == Rollback {
-			actionStr = "ROLLBACK"
-		} else if sdb[row-1].Action == Update {
-			actionStr = "UPDATE"
-		} else if sdb[row-1].Action == NoAction {
-			actionStr = "NOACTION"
-		} else {
-			actionStr = ""
-		}
-
+		actionStr = sdb[row-1].Action
 		butn1 := gwu.NewButton(fmt.Sprintf("%s", actionStr))
 		butn1.Style().SetColor("white")
 		butn1.Style().SetBackground(gwu.ClrGreen)
@@ -237,7 +237,7 @@ func DisplayAtNinjaClientUI(DBClient *redis.Client, win gwu.Window, keyList []st
 		butn1.SetAttr("ID", name)
 
 		butn1.AddEHandlerFunc(func(e gwu.Event) {
-			if butn1.Text() == "UPDATE" {
+			if butn1.Text() == "UPGRADE" {
 				fmt.Printf("UPDATE button pressed!")
 				val := butn1.Attr("ID")
 				if strings.Contains(val, "kubernetes") {
@@ -408,9 +408,10 @@ func main() {
 	p.Add(Refresh)
 	ClientWin.Add(p)
 
+	redisServerEndPoint := "localhost:6389"
 	// Database object creation
 	DBClient := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6389",
+		Addr:     redisServerEndPoint,
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
@@ -419,8 +420,9 @@ func main() {
 	fmt.Println(pong, err)
 	DatabaseOperation(DBClient, ClientWin)
 
+	clientUIAddr := GetSystemIP()+":8081"
 	// Adding all windows to server
-	server := gwu.NewServer("techninja.com", "localhost:8081")
+	server := gwu.NewServer("techninja.com", clientUIAddr)
 	server.SetText("Starting Tech Ninja!!")
 	server.AddWin(ClientWin)
 	server.AddWin(masterWin)
