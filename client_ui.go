@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
+	//"time"
 
 	"github.com/go-redis/redis"
 	"github.com/icza/gowut/gwu"
@@ -105,12 +105,14 @@ func GetDataFromDataBase(key string, client *redis.Client) (out SoftwareDB) {
 	return outSDB
 }
 
+/*
 func startPolling() {
 	for {
 		<-time.After(5 * time.Second)
 		fmt.Println("Polling...")
 	}
 }
+*/
 
 func DisplayAtNinjaClientUI(DBClient *redis.Client, win gwu.Window, keyList []string) {
 	// Fetching data from Database for all keys
@@ -129,9 +131,9 @@ func DisplayAtNinjaClientUI(DBClient *redis.Client, win gwu.Window, keyList []st
 	t.EnsureSize(3, 3)
 	t.RowFmt(0).Style().SetBackground(gwu.ClrNavy)
 	t.RowFmt(0).Style().SetHeight("70")
-	t.RowFmt(1).Style().SetBackground(gwu.ClrSilver)
+	t.RowFmt(1).Style().SetBackground("#E6E6FA")
 	t.RowFmt(1).Style().SetHeight("70")
-	t.RowFmt(2).Style().SetBackground(gwu.ClrSilver)
+	t.RowFmt(2).Style().SetBackground("#E6E6FA")
 	t.RowFmt(2).Style().SetHeight("70")
 
 	t.RowFmt(0).SetAlign(gwu.HADefault, gwu.VAMiddle)
@@ -320,6 +322,6 @@ func main() {
 	server.AddWin(ClientWin)
 	server.AddWin(masterWin)
 
-	go startPolling()
+	//go startPolling()
 	server.Start("display-ui")
 }
