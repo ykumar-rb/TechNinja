@@ -32,6 +32,7 @@ type SoftwareDB struct {
 	AvailVersion string
 	Action       int
 	Status       int
+
 }
 
 func SetDataListInDB(client *redis.Client, SDBList []*SoftwareDB) {
