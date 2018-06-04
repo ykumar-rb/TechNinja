@@ -123,7 +123,7 @@ func DisplayAtNinjaClientUI(DBClient *redis.Client, win gwu.Window, keyList []st
 
 	t := gwu.NewTable()
 	t.Style().SetBorder2(10, gwu.BrdStyleSolid, gwu.ClrNavy)
-	t.SetAlign(gwu.HARight, gwu.VATop)
+	t.SetAlign(gwu.HACenter, gwu.VATop)
 	t.Style().SetSize("1000", "400")
 	t.EnsureSize(3, 3)
 	t.RowFmt(0).Style().SetBackground(gwu.ClrNavy)
@@ -192,7 +192,7 @@ func DisplayAtNinjaClientUI(DBClient *redis.Client, win gwu.Window, keyList []st
 
 		butn1 := gwu.NewButton(fmt.Sprintf("%s", actionStr))
 		butn1.Style().SetColor("white")
-		butn1.Style().SetBackground("green")
+		butn1.Style().SetBackground(gwu.ClrGreen)
 		name := "button" + sdb[row-1].Name
 		butn1.SetAttr("ID", name)
 
@@ -272,10 +272,16 @@ func main() {
 
 	p := gwu.NewPanel()
 	p.Style().SetFullWidth().SetBorderBottom2(7, gwu.BrdStyleSolid, "#cccccc")
-	p.Style().SetBackground("green")
+	p.Style().SetBackground(gwu.ClrGreen)
 	//p.Style().SetFullWidth().SetBorderBottom2(10, gwu.BrdStyleSolid, "#cccccc")
 	p.SetHAlign(gwu.HACenter)
 	p.SetCellPadding(2)
+
+	img1 := gwu.NewImage("riverbed", "https://www.riverbed.com/content/dam/riverbed-www/en_US/Images/" +
+		"fpo/logo_riverbed_orange.png?redesign=true")
+
+	p.Add(img1)
+
 	l2 := gwu.NewLabel("PNP Software Catalog")
 	l2.Style().SetFontWeight(gwu.FontWeightBold).SetFontSize("250%")
 	l2.Style().SetColor("white")
@@ -285,7 +291,7 @@ func main() {
 
 	p.AddHSpace(10)
 	Refresh := gwu.NewLink("Refresh", "#")
-	Refresh.Style().SetColor(gwu.ClrBlue)
+	Refresh.Style().SetColor(gwu.ClrNavy)
 	Refresh.SetTarget("")
 	Refresh.Style().SetMarginLeftPx(5)
 	Refresh.AddEHandlerFunc(func(e gwu.Event) {
