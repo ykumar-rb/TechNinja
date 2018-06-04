@@ -40,11 +40,11 @@ type SoftwareDB struct {
 }
 
 
-func ExecuteInstruction(cmd string) {
+func ExecuteInstruction(cmd string)(err error) {
 
 	cmdList := strings.Split(cmd,",")
 
-	executor.ExecuteServerInstructions(cmdList)
+	return executor.ExecuteServerInstructions(cmdList)
 	/*
 	tokens := strings.Split(cmdList,",")
 
@@ -114,8 +114,8 @@ func PrepareKubernetesKeyList() (keyList []string) {
 }
 
 func DatabaseOperation(DBClient *redis.Client, ClientUI gwu.Window) {
-	SDPDataLIst := PrepareKubernetesSetupDummyData()
-	SetDataListInDB(DBClient, SDPDataLIst)
+	//SDPDataLIst := PrepareKubernetesSetupDummyData()
+	//SetDataListInDB(DBClient, SDPDataLIst)
 
 	// Display software details at Ninja Client UI
 	keyList := PrepareKubernetesKeyList()
@@ -242,45 +242,84 @@ func DisplayAtNinjaClientUI(DBClient *redis.Client, win gwu.Window, keyList []st
 				val := butn1.Attr("ID")
 				if strings.Contains(val, "kubernetes") {
 					fmt.Printf("Hey last UPDATE action was for Kubernetes Software")
-					data := GetDataFromDataBase(keyList[0],DBClient)
-					ExecuteInstruction(data.UnInstall)
-					ExecuteInstruction(data.Install)
-					butn1.SetText("NOACTION")
+					data := GetDataFromDataBase(keyList[0], DBClient)
+					err := ExecuteInstruction(data.UnInstall)
+					if err != nil {
+						fmt.Printf("Error in Uninstalling kubernetes")
+					} else {
+						err = ExecuteInstruction(data.Install)
+						if err != nil {
+							DBClient.HSet(keyList[0], "Status", "Operation failed")
+							butn1.SetText("ROLLBACK")
+						} else {
+							DBClient.HSet(keyList[0], "Version", data.AvailVersion)
+							butn1.SetText("NOACTION")
+						}
+					}
 				} else if strings.Contains(val, "docker-ce") {
 					fmt.Printf("Hey last UPDATE action was for Docker Software")
-					data := GetDataFromDataBase(keyList[1],DBClient)
-					ExecuteInstruction(data.UnInstall)
-					ExecuteInstruction(data.Install)
-					butn1.SetText("NOACTION")
+					data := GetDataFromDataBase(keyList[1], DBClient)
+					err := ExecuteInstruction(data.UnInstall)
+					if err != nil {
+						fmt.Printf("Error in Uninstalling docker")
+					} else {
+						err = ExecuteInstruction(data.Install)
+						if err != nil {
+							DBClient.HSet(keyList[1], "Status", "Operation failed")
+							butn1.SetText("ROLLBACK")
+						} else {
+							newVersion := DBClient.HGet(keyList[1], "AvailVersion")
+							DBClient.HSet(keyList[1], "Version", newVersion)
+							butn1.SetText("NOACTION")
+						}
+					}
 				}
 			} else if butn1.Text() == "INSTALL" {
 				fmt.Printf("INSTALL button pressed!")
 				val := butn1.Attr("ID")
 				if strings.Contains(val, "kubernetes") {
 					fmt.Printf("Hey last INSTALL action was for Kubernetes Software")
-					data := GetDataFromDataBase(keyList[0],DBClient)
-					ExecuteInstruction(data.Install)
-					butn1.SetText("NOACTION")
+					data := GetDataFromDataBase(keyList[0], DBClient)
+					err := ExecuteInstruction(data.Install)
+					if err != nil {
+							butn1.SetText("NOACTION")
+						    DBClient.HSet(keyList[0],"Status","Operation failed")
+						}
+					DBClient.HSet(keyList[0],"Status","Operation Success")
+
 				} else if strings.Contains(val, "docker-ce") {
 					fmt.Printf("Hey last INSTALL action was for Docker Software")
-					data := GetDataFromDataBase(keyList[1],DBClient)
-					ExecuteInstruction(data.Install)
-					butn1.SetText("NOACTION")
+					data := GetDataFromDataBase(keyList[1], DBClient)
+					err := ExecuteInstruction(data.Install)
+					if err != nil {
+						butn1.SetText("NOACTION")
+						DBClient.HSet(keyList[1], "Status", "Operation failed")
+					}
+					DBClient.HSet(keyList[1], "Status", "Operation Success")
 				}
-
 			} else if butn1.Text() == "ROLLBACK" {
 				fmt.Printf("ROLLBACK button pressed!")
 				val := butn1.Attr("ID")
 				if strings.Contains(val, "kubernetes") {
 					fmt.Printf("Hey last ROLLBACK action was for Kubernetes Software")
 					data := GetDataFromDataBase(keyList[0],DBClient)
-					ExecuteInstruction(data.Rollback)
-					butn1.SetText("NOACTION")
+					err := ExecuteInstruction(data.Rollback)
+					if err != nil{
+						DBClient.HSet(keyList[0],"Status","Operation failed")
+					}else{
+						butn1.SetText("NOACTION")
+						DBClient.HSet(keyList[0],"Status","Operation Success")
+					}
 				} else if strings.Contains(val, "docker-ce") {
 					fmt.Printf("Hey last ROLLBACK action was for Docker Software")
 					data := GetDataFromDataBase(keyList[1],DBClient)
-					ExecuteInstruction(data.Rollback)
-					butn1.SetText("NOACTION")
+					err := ExecuteInstruction(data.Rollback)
+					if err != nil{
+						DBClient.HSet(keyList[1],"Status","Operation failed")
+					}else{
+						butn1.SetText("NOACTION")
+						DBClient.HSet(keyList[1],"Status","Operation Success")
+					}
 				}
 			} else if butn1.Text() == "NOACTION" {
 				fmt.Printf("NOACTION button pressed!")
