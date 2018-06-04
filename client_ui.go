@@ -32,6 +32,9 @@ type SoftwareDB struct {
 	AvailVersion string
 	Action       int
 	Status       int
+	Install      string
+	UnInstall    string
+	Rollback     string
 
 }
 
@@ -49,6 +52,9 @@ func SetDataInDB(client *redis.Client, SDB *SoftwareDB) {
 	client.HSet(SDB.Name, "AvailVersion", SDB.AvailVersion)
 	client.HSet(SDB.Name, "Action", SDB.Action)
 	client.HSet(SDB.Name, "Status", SDB.Status)
+	client.HSet(SDB.Name, "Install", SDB.Install)
+	client.HSet(SDB.Name, "UnInstall", SDB.UnInstall)
+	client.HSet(SDB.Name, "Rollback", SDB.Rollback)
 }
 
 func PrepareKubernetesSetupDummyData() []*SoftwareDB {
@@ -60,6 +66,9 @@ func PrepareKubernetesSetupDummyData() []*SoftwareDB {
 	SDB1.Name = "kubernetes"
 	SDB1.Version = "1.9.3-00"
 	SDB1.AvailVersion = "1.10.3"
+	SDB1.Install="dummyInstall"
+	SDB1.UnInstall="dummyUnInstall"
+	SDB1.Rollback="dummyRollback"
 
 	SDB2 := &SoftwareDB{}
 	SDB2.Status = Success
@@ -67,6 +76,9 @@ func PrepareKubernetesSetupDummyData() []*SoftwareDB {
 	SDB2.Name = "docker-ce"
 	SDB2.Version = "17.03.2~ce-0~ubuntu-xenial"
 	SDB2.AvailVersion = "17.03.2~ce-0~ubuntu-xenial"
+	SDB2.Install="dummyInstall"
+	SDB2.UnInstall="dummyUnInstall"
+	SDB2.Rollback="dummyRollback"
 
 	SDBList = append(SDBList, SDB1)
 	SDBList = append(SDBList, SDB2)
@@ -96,6 +108,9 @@ func GetDataFromDataBase(key string, client *redis.Client) (out SoftwareDB) {
 	outSDB.AvailVersion = client.HGet(key, "AvailVersion").Val()
 	outSDB.Action, _ = strconv.Atoi(client.HGet(key, "Action").Val())
 	outSDB.Status, _ = strconv.Atoi(client.HGet(key, "Status").Val())
+	outSDB.Install = client.HGet(key, "Install").Val()
+	outSDB.UnInstall = client.HGet(key, "UnInstall").Val()
+	outSDB.Rollback = client.HGet(key, "Rollback").Val()
 
 	fmt.Printf("*** Software Details # Name: %s, Version: %s AvailVersion: %s Action:%v, Status: %v",
 		outSDB.Name, outSDB.Version, outSDB.AvailVersion, outSDB.Action, outSDB.Status)
