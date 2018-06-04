@@ -9,9 +9,10 @@ import (
 	"strconv"
 	"strings"
 	//"time"
-
+	//"os/exec"
 	"github.com/go-redis/redis"
 	"github.com/icza/gowut/gwu"
+	"github.com/ZTP/pnp/executor"
 )
 
 const (
@@ -37,6 +38,27 @@ type SoftwareDB struct {
 	Rollback     string
 
 }
+
+
+func ExecuteInstruction(cmd string) {
+
+	cmdList := strings.Split(cmd,",")
+
+	executor.ExecuteServerInstructions(cmdList)
+	/*
+	tokens := strings.Split(cmdList,",")
+
+	for token := range tokens{
+		cmd := exec.Command("sh", "-c", token)
+		retCode, err := cmd.CombinedOutput()
+		if err != nil {
+			fmt.Errorf(err.Error())
+		}
+	}
+	fmt.Printf("%s\n", retCode) */
+}
+
+
 
 func SetDataListInDB(client *redis.Client, SDBList []*SoftwareDB) {
 
@@ -66,9 +88,9 @@ func PrepareKubernetesSetupDummyData() []*SoftwareDB {
 	SDB1.Name = "kubernetes"
 	SDB1.Version = "1.9.3-00"
 	SDB1.AvailVersion = "1.10.3"
-	SDB1.Install="dummyInstall"
-	SDB1.UnInstall="dummyUnInstall"
-	SDB1.Rollback="dummyRollback"
+	SDB1.Install= "dummyInstall"
+	SDB1.UnInstall= "dummyUnInstall"
+	SDB1.Rollback= "dummyRollback"
 
 	SDB2 := &SoftwareDB{}
 	SDB2.Status = Success
@@ -76,9 +98,9 @@ func PrepareKubernetesSetupDummyData() []*SoftwareDB {
 	SDB2.Name = "docker-ce"
 	SDB2.Version = "17.03.2~ce-0~ubuntu-xenial"
 	SDB2.AvailVersion = "17.03.2~ce-0~ubuntu-xenial"
-	SDB2.Install="dummyInstall"
+	SDB2.Install= "dummyInstall"
 	SDB2.UnInstall="dummyUnInstall"
-	SDB2.Rollback="dummyRollback"
+	SDB2.Rollback= "dummyRollback"
 
 	SDBList = append(SDBList, SDB1)
 	SDBList = append(SDBList, SDB2)
@@ -220,18 +242,45 @@ func DisplayAtNinjaClientUI(DBClient *redis.Client, win gwu.Window, keyList []st
 				val := butn1.Attr("ID")
 				if strings.Contains(val, "kubernetes") {
 					fmt.Printf("Hey last UPDATE action was for Kubernetes Software")
+					data := GetDataFromDataBase(keyList[0],DBClient)
+					ExecuteInstruction(data.UnInstall)
+					ExecuteInstruction(data.Install)
+					butn1.SetText("NOACTION")
 				} else if strings.Contains(val, "docker-ce") {
 					fmt.Printf("Hey last UPDATE action was for Docker Software")
+					data := GetDataFromDataBase(keyList[1],DBClient)
+					ExecuteInstruction(data.UnInstall)
+					ExecuteInstruction(data.Install)
+					butn1.SetText("NOACTION")
 				}
 			} else if butn1.Text() == "INSTALL" {
 				fmt.Printf("INSTALL button pressed!")
+				val := butn1.Attr("ID")
+				if strings.Contains(val, "kubernetes") {
+					fmt.Printf("Hey last INSTALL action was for Kubernetes Software")
+					data := GetDataFromDataBase(keyList[0],DBClient)
+					ExecuteInstruction(data.Install)
+					butn1.SetText("NOACTION")
+				} else if strings.Contains(val, "docker-ce") {
+					fmt.Printf("Hey last INSTALL action was for Docker Software")
+					data := GetDataFromDataBase(keyList[1],DBClient)
+					ExecuteInstruction(data.Install)
+					butn1.SetText("NOACTION")
+				}
+
 			} else if butn1.Text() == "ROLLBACK" {
 				fmt.Printf("ROLLBACK button pressed!")
 				val := butn1.Attr("ID")
 				if strings.Contains(val, "kubernetes") {
 					fmt.Printf("Hey last ROLLBACK action was for Kubernetes Software")
+					data := GetDataFromDataBase(keyList[0],DBClient)
+					ExecuteInstruction(data.Rollback)
+					butn1.SetText("NOACTION")
 				} else if strings.Contains(val, "docker-ce") {
 					fmt.Printf("Hey last ROLLBACK action was for Docker Software")
+					data := GetDataFromDataBase(keyList[1],DBClient)
+					ExecuteInstruction(data.Rollback)
+					butn1.SetText("NOACTION")
 				}
 			} else if butn1.Text() == "NOACTION" {
 				fmt.Printf("NOACTION button pressed!")
