@@ -123,7 +123,7 @@ func PrepareKubernetesSetupDummyData() []*SoftwareDB {
 
 func PrepareKubernetesKeyList() (keyList []string) {
 
-	keyList = []string{"kubernetes", "docker"}
+	keyList = []string{"kubernetes", "docker-ce"}
 	return
 }
 
